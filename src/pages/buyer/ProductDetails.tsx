@@ -29,7 +29,7 @@ const mockProduct = {
 
 const ProductDetails = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
+
 
   return (
     <div className="min-h-screen bg-surface">

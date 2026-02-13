@@ -7,7 +7,6 @@ import EditProfile from "../pages/seller/EditProfile";
 import BuyerHome from "../pages/buyer/Home";
 import Search from "../pages/buyer/Search";
 import ProductDetails from "../pages/buyer/ProductDetails";
-import ShopDetails from "../pages/buyer/ShopDetails";
 import ForgotPassword from "../pages/seller/ForgotPassword";
 import ResetPassword from "../pages/seller/ResetPassword";
 
