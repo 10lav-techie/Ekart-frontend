@@ -105,7 +105,7 @@ const BuyerHome = () => {
     },
     {
       name: "Others",
-      image: "https://tse4.mm.bing.net/th/id/OIP.QiGD_Pc5_nVvb7T57XqhsgHaEF?rs=1&pid=ImgDetMain&o=7&rm=3"
+      image: "https://th.bing.com/th/id/OIP.TTk94VnNp9YY3w2BroSZ3AHaGb?w=222&h=192&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3"
     }
   ];
 
