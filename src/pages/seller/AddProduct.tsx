@@ -11,6 +11,8 @@ const AddProduct = () => {
   const [image, setImage] = useState("");
   const [category, setCategory] = useState("");
   const [isNew, setIsNew] = useState(false);
+  const [inStock, setInStock] = useState(true);
+
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,6 +33,7 @@ const AddProduct = () => {
         image,
         category,
         isNew,
+        inStock,
       });
 
       navigate("/seller/dashboard");
@@ -106,6 +109,14 @@ const AddProduct = () => {
             onChange={(e) => setIsNew(e.target.checked)}
           />
           Mark as New Product
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={inStock}
+            onChange={(e) => setInStock(e.target.checked)}
+          />
+          Available (Uncheck if out of stock)
         </label>
 
         {/* Submit */}

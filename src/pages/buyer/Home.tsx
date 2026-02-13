@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { motion } from "framer-motion";
 
@@ -11,6 +11,7 @@ interface Product {
   image: string;
   category: string;
   isNew?: boolean;
+  inStock :boolean;
   seller: {
     _id: string;
     shopName: string;
@@ -26,14 +27,16 @@ interface Locations {
 }
 
 const BuyerHome = () => {
-  
+  const navigate = useNavigate();
+
   const [products, setProducts] = useState<Product[]>([]);
   const [locations, setLocations] = useState<Locations>({});
   const [search, setSearch] = useState("");
   const [city, setCity] = useState("");
   const [district, setDistrict] = useState("");
-  const [hasSearched, setHasSearched] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [shops, setShops] = useState<any[]>([]);
+  const [viewMode, setViewMode] = useState<"categories" | "shops" | "products">("categories");
 
   // Fetch locations once
   useEffect(() => {
@@ -59,22 +62,24 @@ const BuyerHome = () => {
 
   const handleSearch = async () => {
     const { data } = await API.get(
-      `/products/public?search=${search}&city=${city}&district=${district}&category=${selectedCategory}`
+      `/products/public?search=${search}&city=${city}&district=${district}`
     );
 
     setProducts(data);
-    setHasSearched(true);
+    setViewMode("products");
   };
+
   const handleCategoryClick = async (category: string) => {
     setSelectedCategory(category);
-    setHasSearched(true);
+    setViewMode("shops");
 
     const { data } = await API.get(
-      `/products/public?city=${city}&district=${district}&category=${category}`
+      `/products/shops-by-category?category=${category}&city=${city}&district=${district}`
     );
 
-    setProducts(data);
+    setShops(data);
   };
+
 
 
   const handleCityChange = (value: string) => {
@@ -101,27 +106,25 @@ const BuyerHome = () => {
   ];
 
   return (
-    <div>
-      {/* HERO SECTION */}
-      <section className="relative bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-600 text-white py-28 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+    <div className="bg-slate-50 min-h-screen">
 
-        <div className="relative max-w-6xl mx-auto px-6 text-center">
-          <h1 className="text-5xl md:text-6xl font-extrabold leading-tight mb-6">
-            Discover <span className="text-yellow-300">Local Shops</span> Near You
+      {/* ================= HERO ================= */}
+      <section className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-24">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <h1 className="text-5xl font-bold mb-4">
+            Find Products From
+            <span className="text-yellow-300"> Local Shops</span>
           </h1>
 
-          <p className="text-lg md:text-xl opacity-90 mb-12 max-w-2xl mx-auto">
-            Explore products from trusted neighborhood stores across your city.
+          <p className="opacity-90 mb-10 text-lg">
+            Search items available near you and discover trusted vendors.
           </p>
 
-          {/* Glass Search Box */}
-          <div className="bg-white/20 backdrop-blur-xl rounded-2xl p-4 shadow-2xl flex flex-col md:flex-row gap-4 justify-center max-w-5xl mx-auto">
+          {/* Search Bar */}
+          <div className="bg-white shadow-2xl rounded-2xl p-4 flex flex-col md:flex-row gap-4 max-w-5xl mx-auto">
 
-            {/* City Dropdown */}
             <select
-              className="p-4 rounded-xl text-black w-full md:w-1/4"
+              className="p-4 rounded-xl border text-slate-700 w-full md:w-1/4"
               value={city}
               onChange={(e) => handleCityChange(e.target.value)}
             >
@@ -133,9 +136,8 @@ const BuyerHome = () => {
               ))}
             </select>
 
-            {/* District Dropdown */}
             <select
-              className="p-4 rounded-xl text-black w-full md:w-1/4"
+              className="p-4 rounded-xl border text-slate-700 w-full md:w-1/4"
               value={district}
               onChange={(e) => setDistrict(e.target.value)}
               disabled={!city}
@@ -149,9 +151,8 @@ const BuyerHome = () => {
                 ))}
             </select>
 
-            {/* Search Input */}
             <input
-              className="p-4 rounded-xl text-black w-full md:w-1/2"
+              className="p-4 rounded-xl border w-full md:w-1/2 text-slate-700"
               placeholder="Search milk, rice, charger..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -159,7 +160,7 @@ const BuyerHome = () => {
 
             <button
               onClick={handleSearch}
-              className="bg-black text-white px-8 rounded-xl hover:bg-gray-900 transition font-semibold"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 rounded-xl font-semibold transition"
             >
               Search
             </button>
@@ -167,13 +168,16 @@ const BuyerHome = () => {
         </div>
       </section>
 
-      {/* PRODUCT GRID */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
 
-        {!hasSearched ? (
+      {/* ================= CONTENT ================= */}
+      {/* ================= CONTENT ================= */}
+      <section className="max-w-7xl mx-auto px-6 py-16">
+
+        {/* ===== CATEGORY VIEW ===== */}
+        {viewMode === "categories" && (
           <>
-            <h2 className="text-3xl font-bold mb-10 text-center">
-              Explore Categories
+            <h2 className="text-3xl font-bold mb-10">
+              Browse Categories
             </h2>
 
             <div className="grid md:grid-cols-4 gap-8">
@@ -181,16 +185,15 @@ const BuyerHome = () => {
                 <div
                   key={category.name}
                   onClick={() => handleCategoryClick(category.name)}
-                  className="cursor-pointer group relative rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300"
+                  className="cursor-pointer bg-white rounded-2xl shadow-md hover:shadow-xl transition group overflow-hidden"
                 >
                   <img
                     src={category.image}
                     alt={category.name}
-                    className="h-60 w-full object-cover group-hover:scale-110 transition duration-500"
+                    className="h-40 w-full object-cover group-hover:scale-105 transition duration-300"
                   />
-
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <h3 className="text-white text-xl font-bold">
+                  <div className="p-5 text-center">
+                    <h3 className="font-semibold text-lg text-slate-700">
                       {category.name}
                     </h3>
                   </div>
@@ -198,50 +201,150 @@ const BuyerHome = () => {
               ))}
             </div>
           </>
-        ) : (
+        )}
+
+        {/* ===== SHOPS VIEW ===== */}
+        {viewMode === "shops" && (
           <>
-            <h2 className="text-2xl font-bold mb-8">
-              Available Products
-            </h2>
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-3xl font-bold">
+                {selectedCategory} Shops
+              </h2>
+
+              <button
+                onClick={() => setViewMode("categories")}
+                className="text-sm bg-slate-100 px-4 py-2 rounded-lg hover:bg-slate-200 transition"
+              >
+                ← Back to Categories
+              </button>
+            </div>
+
+            {shops.length === 0 ? (
+              <div className="bg-white p-10 rounded-xl text-center shadow-sm">
+                <p className="text-slate-500">
+                  No shops found in this category.
+                </p>
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                {shops.map((shop) => (
+                  <div
+                    key={shop._id}
+                    onClick={() => navigate(`/shop/${shop._id}`)}
+                    className="group cursor-pointer bg-white rounded-2xl shadow-sm hover:shadow-2xl transition-all duration-300 overflow-hidden border border-slate-100 hover:-translate-y-1"
+                  >
+
+                    {/* Banner */}
+                    <div className="h-28 bg-slate-100 relative">
+                      {shop.bannerImage ? (
+                        <img
+                          src={shop.bannerImage}
+                          alt={shop.shopName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-r from-blue-500 to-indigo-500" />
+                      )}
+
+                      {/* Logo */}
+                      <div className="absolute -bottom-8 left-4">
+                        <div className="w-16 h-16 rounded-full border-4 border-white bg-white overflow-hidden shadow-md">
+                          {shop.logoImage ? (
+                            <img
+                              src={shop.logoImage}
+                              alt="logo"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-lg font-bold text-blue-600 bg-blue-50">
+                              {shop.shopName?.charAt(0)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="pt-10 p-4">
+                      <h3 className="text-lg font-semibold text-slate-800 group-hover:text-blue-600 transition">
+                        {shop.shopName}
+                      </h3>
+
+                      <p className="text-sm text-slate-500 mt-1">
+                        📍 {shop.area}, {shop.city}
+                      </p>
+
+                      <button className="mt-4 w-full bg-slate-50 hover:bg-blue-50 text-blue-600 font-medium py-2 rounded-lg transition">
+                        View Shop →
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+            )}
+          </>
+        )}
+
+        {/* ===== PRODUCTS VIEW ===== */}
+        {viewMode === "products" && (
+          <>
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-3xl font-bold">
+                Search Results
+              </h2>
+
+              <button
+                onClick={() => setViewMode("categories")}
+                className="text-sm bg-slate-100 px-4 py-2 rounded-lg hover:bg-slate-200 transition"
+              >
+                ← Back to Categories
+              </button>
+            </div>
 
             {products.length === 0 ? (
-              <p className="text-slate-500">No products found.</p>
+              <div className="bg-white p-10 rounded-xl text-center shadow-sm">
+                <p className="text-slate-500">
+                  No products found.
+                </p>
+              </div>
             ) : (
-              <div className="grid md:grid-cols-3 gap-8">
+              <div className="grid md:grid-cols-3 gap-10">
                 {products.map((product) => (
                   <motion.div
                     key={product._id}
-                    initial={{ opacity: 0, y: 30 }}
+                    initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4 }}
-                    className="group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300 border border-slate-100"
+                    transition={{ duration: 0.3 }}
+                    className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition border border-slate-100 overflow-hidden"
                   >
-                    {/* Image */}
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="h-48 w-full object-cover"
+                      className="h-52 w-full object-cover"
                     />
 
                     <div className="p-6">
-                      <h3 className="text-lg font-semibold mb-2">
+                      <h3 className="text-lg font-semibold mb-2 text-slate-800">
                         {product.name}
                       </h3>
 
-                      <p className="text-slate-500 text-sm mb-3">
-                        {product.description}
-                      </p>
-
-                      <p className="text-xl font-bold text-blue-600 mb-3">
+                      <p className="text-xl font-bold text-blue-600 mb-2">
                         ₹{product.price}
                       </p>
 
-                      <Link
-                        to={`/shop/${product.seller._id}`}
-                        className="text-sm text-slate-500 hover:text-blue-600"
-                      >
+                      <p className="text-sm text-slate-500 mb-3">
                         {product.seller.shopName}
-                      </Link>
+                      </p>
+
+                      <button
+                        onClick={() =>
+                          navigate(`/shop/${product.seller._id}`)
+                        }
+                        className="w-full border border-slate-300 hover:bg-slate-100 py-2 rounded-lg text-sm font-medium transition"
+                      >
+                        View Shop
+                      </button>
                     </div>
                   </motion.div>
                 ))}
@@ -249,10 +352,12 @@ const BuyerHome = () => {
             )}
           </>
         )}
+
       </section>
 
     </div>
   );
+
 };
 
 export default BuyerHome;

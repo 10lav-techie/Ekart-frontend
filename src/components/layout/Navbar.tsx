@@ -1,21 +1,14 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useContext } from "react";
+import { AuthContext } from "../../context/AuthContext";
 
 const Navbar = () => {
+  const { seller, logout } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [isSellerLoggedIn, setIsSellerLoggedIn] = useState(false);
-
-  useEffect(() => {
-    const seller = localStorage.getItem("seller");
-    if (seller) {
-      setIsSellerLoggedIn(true);
-    }
-  }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("seller");
-    setIsSellerLoggedIn(false);
-    navigate("/");
+    logout();        // context logout
+    navigate("/");   // redirect to home
   };
 
   return (
@@ -40,7 +33,8 @@ const Navbar = () => {
             Home
           </Link>
 
-          {!isSellerLoggedIn && (
+          {/* If NOT logged in */}
+          {!seller && (
             <Link
               to="/seller/login"
               className="px-5 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition duration-200 shadow-md"
@@ -49,7 +43,8 @@ const Navbar = () => {
             </Link>
           )}
 
-          {isSellerLoggedIn && (
+          {/* If logged in */}
+          {seller && (
             <>
               <Link
                 to="/seller/dashboard"

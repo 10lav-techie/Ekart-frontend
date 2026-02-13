@@ -20,24 +20,26 @@ const Signup = () => {
   const [city, setCity] = useState("");
   const [district, setDistrict] = useState("");
   const [area, setArea] = useState("");
+  const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [address, setAddress] = useState("");
 
-  // Fetch locations once
+  // NEW OPTIONAL FIELDS
+  const [phone, setPhone] = useState("");
+  const [bannerImage, setBannerImage] = useState("");
+  const [logoImage, setLogoImage] = useState("");
+
   useEffect(() => {
     const fetchLocations = async () => {
       const { data } = await API.get("/locations");
-      console.log("Locations from backend:", data);
       setLocations(data);
     };
-
     fetchLocations();
   }, []);
 
   const handleCityChange = (value: string) => {
     setCity(value);
-    setDistrict(""); // Reset district when state changes
+    setDistrict("");
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -54,6 +56,9 @@ const Signup = () => {
         address,
         email,
         password,
+        phone,
+        bannerImage,
+        logoImage,
       });
 
       localStorage.setItem("seller", JSON.stringify(data));
@@ -67,19 +72,19 @@ const Signup = () => {
 
   return (
     <AuthLayout>
-      <h2 className="text-xl font-semibold mb-1">
-        Register Your Shop
-      </h2>
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-bold text-slate-800">
+          Create Your Shop Account
+        </h2>
+        <p className="text-slate-500 mt-2 text-sm">
+          Join the marketplace and start listing your products today.
+        </p>
+      </div>
 
-      <p className="text-sm text-slate-500 mb-6">
-        Create a free account to list your products
-      </p>
-
-      <form onSubmit={handleSignup} className="space-y-4">
+      <form onSubmit={handleSignup} className="space-y-5">
 
         <Input
           label="Owner Name"
-          placeholder="Your name"
           value={ownerName}
           onChange={(e) => setOwnerName(e.target.value)}
           required
@@ -87,19 +92,17 @@ const Signup = () => {
 
         <Input
           label="Shop Name"
-          placeholder="Sharma General Store"
           value={shopName}
           onChange={(e) => setShopName(e.target.value)}
           required
         />
 
-        {/* State Dropdown */}
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            State
-          </label>
+        {/* Location */}
+        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+          <p className="text-sm font-medium mb-4">Shop Location</p>
+
           <select
-            className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500"
+            className="w-full mb-4 px-4 py-3 rounded-xl border"
             value={city}
             onChange={(e) => handleCityChange(e.target.value)}
             required
@@ -111,15 +114,9 @@ const Signup = () => {
               </option>
             ))}
           </select>
-        </div>
 
-        {/* District Dropdown */}
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            District
-          </label>
           <select
-            className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 rounded-xl border"
             value={district}
             onChange={(e) => setDistrict(e.target.value)}
             disabled={!city}
@@ -137,23 +134,44 @@ const Signup = () => {
 
         <Input
           label="Area / Locality"
-          placeholder="Karol Bagh"
           value={area}
           onChange={(e) => setArea(e.target.value)}
           required
         />
+
         <Input
           label="Full Address"
-          placeholder="Shop No. 12, Main Market, Near Metro Station"
           value={address}
           onChange={(e) => setAddress(e.target.value)}
           required
         />
 
+        {/* NEW OPTIONAL FIELDS */}
+
         <Input
-          label="Email address"
+          label="Phone Number (Optional)"
+          placeholder="+91 9876543210"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+        />
+
+        <Input
+          label="Shop Banner Image URL (Optional)"
+          placeholder="Paste banner image link"
+          value={bannerImage}
+          onChange={(e) => setBannerImage(e.target.value)}
+        />
+
+        <Input
+          label="Shop Logo Image URL (Optional)"
+          placeholder="Paste logo image link"
+          value={logoImage}
+          onChange={(e) => setLogoImage(e.target.value)}
+        />
+
+        <Input
+          label="Email"
           type="email"
-          placeholder="shop@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -162,7 +180,6 @@ const Signup = () => {
         <Input
           label="Password"
           type="password"
-          placeholder="••••••••"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -177,15 +194,17 @@ const Signup = () => {
         </Button>
       </form>
 
-      <p className="text-sm text-center mt-6">
-        Already registered?{" "}
-        <Link
-          to="/seller/login"
-          className="text-blue-600 font-medium hover:underline"
-        >
-          Login here
-        </Link>
-      </p>
+      <div className="mt-8 text-center">
+        <p className="text-sm text-slate-500">
+          Already registered?{" "}
+          <Link
+            to="/seller/login"
+            className="text-blue-600 font-semibold hover:underline"
+          >
+            Login here
+          </Link>
+        </p>
+      </div>
     </AuthLayout>
   );
 };

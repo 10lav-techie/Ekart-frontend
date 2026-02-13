@@ -8,6 +8,8 @@ import BuyerHome from "../pages/buyer/Home";
 import Search from "../pages/buyer/Search";
 import ProductDetails from "../pages/buyer/ProductDetails";
 import ShopDetails from "../pages/buyer/ShopDetails";
+import ForgotPassword from "../pages/seller/ForgotPassword";
+import ResetPassword from "../pages/seller/ResetPassword";
 
 // Seller pages
 import Login from "../pages/auth/Login";
@@ -20,13 +22,16 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* ---------------- PUBLIC ROUTES ---------------- */}
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
+
+      <Route path="/seller/forgot-password" element={<ForgotPassword />} />
+
       <Route path="/shop/:sellerId" element={<ShopPage />} />
       <Route path="/seller/edit-profile" element={<EditProfile />} />
 
       <Route path="/" element={<BuyerHome />} />
       <Route path="/search" element={<Search />} />
       <Route path="/product/:id" element={<ProductDetails />} />
-      <Route path="/shop/:id" element={<ShopDetails />} />
 
       {/* ---------------- SELLER AUTH ---------------- */}
       <Route path="/seller/login" element={<Login />} />

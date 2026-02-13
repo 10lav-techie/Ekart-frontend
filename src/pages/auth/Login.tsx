@@ -1,19 +1,15 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
 import AuthLayout from "../../components/layout/AuthLayout";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
 import API from "../../services/api";
-
-/**
- * Seller Login Page
- * -----------------
- * Only shop owners log in.
- */
+import { AuthContext } from "../../context/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { setSeller } = useContext(AuthContext);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,7 +25,11 @@ const Login = () => {
         password,
       });
 
+      // Save to localStorage
       localStorage.setItem("seller", JSON.stringify(data));
+
+      // Update global auth state
+      setSeller(data);
 
       navigate("/seller/dashboard");
     } catch (error: any) {
@@ -39,12 +39,12 @@ const Login = () => {
     setLoading(false);
   };
 
-
   return (
     <AuthLayout>
       <h2 className="text-xl font-semibold mb-1">
         Seller Login
       </h2>
+
       <p className="text-sm text-muted mb-6">
         Login to manage your shop and products
       </p>
@@ -77,6 +77,14 @@ const Login = () => {
           Login
         </Button>
       </form>
+      <div className="text-right mt-2">
+        <Link
+          to="/seller/forgot-password"
+          className="text-sm text-blue-600 hover:underline"
+        >
+          Forgot Password?
+        </Link>
+      </div>
 
       <p className="text-sm text-center mt-6">
         Don’t have a shop account?{" "}
