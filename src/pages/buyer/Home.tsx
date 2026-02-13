@@ -102,6 +102,10 @@ const BuyerHome = () => {
     {
       name: "Clothes",
       image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80"
+    },
+    {
+      name: "Others",
+      image: "https://tse4.mm.bing.net/th/id/OIP.QiGD_Pc5_nVvb7T57XqhsgHaEF?rs=1&pid=ImgDetMain&o=7&rm=3"
     }
   ];
 

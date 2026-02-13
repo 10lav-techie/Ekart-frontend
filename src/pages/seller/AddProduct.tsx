@@ -99,6 +99,7 @@ const AddProduct = () => {
           <option value="Electronics">Electronics</option>
           <option value="Clothes">Clothes</option>
           <option value="Food">Food</option>
+          <option value="Others">Others</option>
         </select>
 
         {/* New Tag */}
