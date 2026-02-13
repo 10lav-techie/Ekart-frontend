@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
