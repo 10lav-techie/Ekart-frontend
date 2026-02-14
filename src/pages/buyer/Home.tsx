@@ -28,6 +28,7 @@ interface Locations {
 
 const BuyerHome = () => {
   const navigate = useNavigate();
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [locations, setLocations] = useState<Locations>({});
@@ -61,6 +62,25 @@ const BuyerHome = () => {
   }, [city, district]);
 
   const handleSearch = async () => {
+    if (!city || !district) {
+      alert("Please select state and district");
+      return;
+    }
+
+    // 🔥 CASE 1: No search text → show shops
+    if (!search.trim()) {
+      setSelectedCategory("");
+      setViewMode("shops");
+
+      const { data } = await API.get(
+        `/products/shops-by-category?city=${city}&district=${district}`
+      );
+
+      setShops(data);
+      return;
+    }
+
+    // 🔥 CASE 2: Search text exists → show products
     const { data } = await API.get(
       `/products/public?search=${search}&city=${city}&district=${district}`
     );
@@ -68,6 +88,7 @@ const BuyerHome = () => {
     setProducts(data);
     setViewMode("products");
   };
+
 
   const handleCategoryClick = async (category: string) => {
     setSelectedCategory(category);
@@ -212,7 +233,10 @@ const BuyerHome = () => {
           <>
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-3xl font-bold">
-                {selectedCategory} Shops
+                {selectedCategory
+                  ? `${selectedCategory} Shops`
+                  : `Shops in ${district}, ${city}`}
+
               </h2>
 
               <button

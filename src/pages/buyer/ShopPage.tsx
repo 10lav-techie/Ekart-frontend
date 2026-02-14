@@ -25,6 +25,8 @@ interface Product {
 
 const ShopPage = () => {
   const { sellerId } = useParams();
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
   const [products, setProducts] = useState<Product[]>([]);
   const [showAvailableOnly, setShowAvailableOnly] = useState(false);
   const [sortOption, setSortOption] = useState("newest");
@@ -199,9 +201,13 @@ const ShopPage = () => {
                   </p>
                 )}
 
-                <button className="mt-4 w-full border border-slate-300 hover:bg-slate-100 py-2 rounded-lg text-sm font-medium transition">
+                <button
+                  onClick={() => setSelectedProduct(product)}
+                  className="w-full border border-slate-300 hover:bg-slate-100 py-2 rounded-lg text-sm font-medium transition"
+                >
                   View Details
                 </button>
+
               </div>
             </div>
           ))}
@@ -219,6 +225,48 @@ const ShopPage = () => {
           📞 Call Shop
         </button>
       )}
+      {selectedProduct && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4"
+          onClick={() => setSelectedProduct(null)}
+        >
+          {/* Card */}
+          <div
+            className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-fadeIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Image */}
+            <img
+              src={selectedProduct.image}
+              alt={selectedProduct.name}
+              className="w-full h-56 object-cover"
+            />
+
+            {/* Content */}
+            <div className="p-6">
+              <h2 className="text-2xl font-bold text-slate-800 mb-2">
+                {selectedProduct.name}
+              </h2>
+
+              <p className="text-blue-600 text-xl font-semibold mb-3">
+                ₹{selectedProduct.price}
+              </p>
+
+              <p className="text-slate-600 mb-4">
+                {selectedProduct.description || "No description available."}
+              </p>
+
+              <button
+                onClick={() => setSelectedProduct(null)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-medium transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
