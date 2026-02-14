@@ -29,6 +29,8 @@ interface Locations {
 const BuyerHome = () => {
   const navigate = useNavigate();
 
+  const [userLat, setUserLat] = useState<number | null>(null);
+  const [userLng, setUserLng] = useState<number | null>(null);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [locations, setLocations] = useState<Locations>({});
@@ -37,9 +39,38 @@ const BuyerHome = () => {
   const [district, setDistrict] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [shops, setShops] = useState<any[]>([]);
-  const [viewMode, setViewMode] = useState<"categories" | "shops" | "products">("categories");
+  const [viewMode, setViewMode] = useState<
+  "categories" | "shops" | "products" | "nearby"
+>("categories");
+
 
   // Fetch locations once
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLat(position.coords.latitude);
+        setUserLng(position.coords.longitude);
+      },
+      (error) => {
+        console.log("Location denied");
+      }
+    );
+  }, []);
+  useEffect(() => {
+    const fetchNearby = async () => {
+      if (!userLat || !userLng) return;
+
+      const { data } = await API.get(
+        `/products/nearby-shops?lat=${userLat}&lng=${userLng}&city=${city}&district=${district}`
+      );
+
+      setShops(data);
+      setViewMode("shops");
+    };
+
+    fetchNearby();
+  }, [userLat, userLng, city, district]);
+
   useEffect(() => {
     const fetchLocations = async () => {
       const { data } = await API.get("/locations");
@@ -90,6 +121,8 @@ const BuyerHome = () => {
   };
 
 
+
+
   const handleCategoryClick = async (category: string) => {
     setSelectedCategory(category);
     setViewMode("shops");
@@ -130,11 +163,35 @@ const BuyerHome = () => {
     }
   ];
 
+  const handleNearbyShops = async () => {
+    try {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        const { data } = await API.get(
+          `/products/nearby?lat=${lat}&lng=${lng}`
+        );
+
+        setShops(data);
+        setSelectedCategory("Nearby");
+        setViewMode("shops");
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
     <div className="bg-slate-50 min-h-screen">
 
       {/* ================= HERO ================= */}
-      <section className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-24">
+      <section
+        className="relative text-white py-24 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('https://t3.ftcdn.net/jpg/01/17/33/22/360_F_117332203_ekwDZkViF6M3itApEFRIH4844XjJ7zEb.jpg')",
+        }}
+      >
+
         <div className="max-w-7xl mx-auto px-6 text-center">
           <h1 className="text-5xl font-bold mb-4">
             Find Products From
@@ -190,6 +247,17 @@ const BuyerHome = () => {
               Search
             </button>
           </div>
+          <div className="mt-8 flex justify-center">
+            <button
+              type="button"
+              onClick={handleNearbyShops}
+              className="bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition cursor-pointer hover:-translate-y-1"
+            >
+                Explore Shops Near Me
+            </button>
+          </div>
+
+
         </div>
       </section>
 
@@ -231,21 +299,31 @@ const BuyerHome = () => {
         {/* ===== SHOPS VIEW ===== */}
         {viewMode === "shops" && (
           <>
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex flex-wrap gap-4 justify-between items-center mb-8">
               <h2 className="text-3xl font-bold">
-                {selectedCategory
-                  ? `${selectedCategory} Shops`
-                  : `Shops in ${district}, ${city}`}
-
+                {selectedCategory === "Nearby"
+                  ? "Shops Near You (Within 30km)"
+                  : `${selectedCategory} Shops`}
               </h2>
 
-              <button
-                onClick={() => setViewMode("categories")}
-                className="text-sm bg-slate-100 px-4 py-2 rounded-lg hover:bg-slate-200 transition"
-              >
-                ← Back to Categories
-              </button>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setViewMode("categories")}
+                  className="text-sm bg-slate-100 px-4 py-2 rounded-lg hover:bg-slate-200 transition"
+                >
+                  ← Categories
+                </button>
+
+                <button
+                  onClick={handleNearbyShops}
+                  className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                >
+                  📍 Near Me (30km)
+                </button>
+              </div>
             </div>
+
 
             {shops.length === 0 ? (
               <div className="bg-white p-10 rounded-xl text-center shadow-sm">
@@ -313,6 +391,7 @@ const BuyerHome = () => {
             )}
           </>
         )}
+
 
         {/* ===== PRODUCTS VIEW ===== */}
         {viewMode === "products" && (

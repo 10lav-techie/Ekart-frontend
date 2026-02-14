@@ -4,6 +4,7 @@ import AuthLayout from "../../components/layout/AuthLayout";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
 import API from "../../services/api";
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 
 interface Locations {
   [state: string]: string[];
@@ -11,9 +12,12 @@ interface Locations {
 
 const Signup = () => {
   const navigate = useNavigate();
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [locations, setLocations] = useState<Locations>({});
+  const [position, setPosition] = useState<[number, number] | null>(null);
 
   const [ownerName, setOwnerName] = useState("");
   const [shopName, setShopName] = useState("");
@@ -28,6 +32,12 @@ const Signup = () => {
   const [phone, setPhone] = useState("");
   const [bannerImage, setBannerImage] = useState("");
   const [logoImage, setLogoImage] = useState("");
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition((position) => {
+      setLatitude(position.coords.latitude);
+      setLongitude(position.coords.longitude);
+    });
+  }, []);
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -40,6 +50,15 @@ const Signup = () => {
   const handleCityChange = (value: string) => {
     setCity(value);
     setDistrict("");
+  };
+  const LocationMarker = () => {
+    useMapEvents({
+      click(e) {
+        setPosition([e.latlng.lat, e.latlng.lng]);
+      },
+    });
+
+    return position ? <Marker position={position} /> : null;
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -59,6 +78,14 @@ const Signup = () => {
         phone,
         bannerImage,
         logoImage,
+        latitude,
+        longitude,
+        location: position
+          ? {
+              type: "Point",
+              coordinates: [position[1], position[0]], // [lng, lat]
+            }
+          : undefined,
       });
 
       localStorage.setItem("seller", JSON.stringify(data));
@@ -145,6 +172,30 @@ const Signup = () => {
           onChange={(e) => setAddress(e.target.value)}
           required
         />
+        <div className="mt-6">
+          <label className="block text-sm font-medium mb-2">
+            Select Exact Shop Location
+          </label>
+
+          <div className="h-72 rounded-xl overflow-hidden border">
+            <MapContainer
+              center={[20.5937, 78.9629]} // India center
+              zoom={5}
+              className="h-full w-full"
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <LocationMarker />
+            </MapContainer>
+          </div>
+
+          {position && (
+            <p className="text-sm text-slate-500 mt-2">
+              Selected: {position[0].toFixed(4)}, {position[1].toFixed(4)}
+            </p>
+          )}
+        </div>
 
         {/* NEW OPTIONAL FIELDS */}
 

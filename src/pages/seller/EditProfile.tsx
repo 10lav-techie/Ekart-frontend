@@ -21,6 +21,8 @@ const EditProfile = () => {
   const [phone, setPhone] = useState("");
   const [bannerImage, setBannerImage] = useState("");
   const [logoImage, setLogoImage] = useState("");
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,6 +39,11 @@ const EditProfile = () => {
       setDistrict(data.district);
       setArea(data.area);
       setAddress(data.address);
+      if (data.location?.coordinates) {
+        setLongitude(data.location.coordinates[0]);
+        setLatitude(data.location.coordinates[1]);
+      }
+
       setPhone(data.phone || "");
       setBannerImage(data.bannerImage || "");
       setLogoImage(data.logoImage || "");
@@ -51,6 +58,18 @@ const EditProfile = () => {
     setCity(value);
     setDistrict("");
   };
+  const handleGetLocation = () => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLat(position.coords.latitude);
+        setLng(position.coords.longitude);
+        alert("Location captured successfully");
+      },
+      (error) => {
+        alert("Location permission denied");
+      }
+    );
+  };
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +83,8 @@ const EditProfile = () => {
         district,
         area,
         address,
+        lat,
+        lng,
         phone,
         bannerImage,
         logoImage,
@@ -155,6 +176,28 @@ const EditProfile = () => {
             value={address}
             onChange={(e) => setAddress(e.target.value)}
           />
+          <input
+            className="w-full border p-3 rounded-xl"
+            placeholder="Latitude (e.g. 30.7333)"
+            value={lat ?? ""}
+            onChange={(e) => setLat(Number(e.target.value))}
+          />
+
+          <input
+            className="w-full border p-3 rounded-xl"
+            placeholder="Longitude (e.g. 76.7794)"
+            value={lng ?? ""}
+            onChange={(e) => setLng(Number(e.target.value))}
+          />
+
+
+          <button
+            type="button"
+            onClick={handleGetLocation}
+            className="w-full bg-slate-100 hover:bg-slate-200 py-3 rounded-xl font-medium"
+          >
+            📍 Update Shop Location
+          </button>
 
           {/* Optional Branding Fields */}
           <input
