@@ -28,7 +28,7 @@ interface Locations {
 
 const BuyerHome = () => {
   const navigate = useNavigate();
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
 
   const [products, setProducts] = useState<Product[]>([]);
   const [locations, setLocations] = useState<Locations>({});
