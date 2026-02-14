@@ -51,7 +51,7 @@ const BuyerHome = () => {
         setUserLat(position.coords.latitude);
         setUserLng(position.coords.longitude);
       },
-      (error) => {
+      (_error) => {
         console.log("Location denied");
       }
     );

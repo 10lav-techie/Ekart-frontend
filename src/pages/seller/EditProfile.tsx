@@ -40,9 +40,10 @@ const EditProfile = () => {
       setArea(data.area);
       setAddress(data.address);
       if (data.location?.coordinates) {
-        setLongitude(data.location.coordinates[0]);
-        setLatitude(data.location.coordinates[1]);
+        setLng(data.location.coordinates[0]);
+        setLat(data.location.coordinates[1]);
       }
+
 
       setPhone(data.phone || "");
       setBannerImage(data.bannerImage || "");
@@ -65,7 +66,7 @@ const EditProfile = () => {
         setLng(position.coords.longitude);
         alert("Location captured successfully");
       },
-      (error) => {
+      (_error) => {
         alert("Location permission denied");
       }
     );
