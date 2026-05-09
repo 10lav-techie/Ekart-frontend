@@ -1,9 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
-import Badge from "../../components/common/Badge";
-import Button from "../../components/common/Button";
-
 /**
  * TEMP MOCK PRODUCT
  * -----------------

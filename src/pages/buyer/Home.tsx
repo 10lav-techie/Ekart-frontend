@@ -26,9 +26,6 @@ interface Locations {
 const BuyerHome = () => {
   const navigate = useNavigate();
 
-  const [userLat, setUserLat] = useState<number | null>(null);
-  const [userLng, setUserLng] = useState<number | null>(null);
-
   const [products, setProducts] = useState<Product[]>([]);
   const [locations, setLocations] = useState<Locations>({});
   const [search, setSearch] = useState("");
