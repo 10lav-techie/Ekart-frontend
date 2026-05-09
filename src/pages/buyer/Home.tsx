@@ -39,17 +39,23 @@ const BuyerHome = () => {
   >("categories");
 
   // ================= GEO LOCATION =================
+
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLat(position.coords.latitude);
-        setUserLng(position.coords.longitude);
-      },
       () => {
-        console.log("Location denied");
+        console.log(
+          "Location fetched"
+        );
+      },
+
+      () => {
+        console.log(
+          "Location denied"
+        );
       }
     );
   }, []);
+
 
   // ================= FETCH LOCATIONS =================
   useEffect(() => {
