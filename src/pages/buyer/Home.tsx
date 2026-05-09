@@ -7,11 +7,9 @@ interface Product {
   _id: string;
   name: string;
   price: number;
-  description?: string;
   image: string;
   category: string;
-  isNew?: boolean;
-  inStock :boolean;
+  inStock: boolean;
   seller: {
     _id: string;
     shopName: string;
@@ -20,7 +18,6 @@ interface Product {
     area: string;
   };
 }
-
 
 interface Locations {
   [state: string]: string[];
@@ -39,130 +36,111 @@ const BuyerHome = () => {
   const [district, setDistrict] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [shops, setShops] = useState<any[]>([]);
+
   const [viewMode, setViewMode] = useState<
-  "categories" | "shops" | "products" | "nearby"
->("categories");
+    "categories" | "shops" | "products"
+  >("categories");
 
-
-  // Fetch locations once
+  // ================= GEO LOCATION =================
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setUserLat(position.coords.latitude);
         setUserLng(position.coords.longitude);
       },
-      (_error) => {
+      () => {
         console.log("Location denied");
       }
     );
   }, []);
-  useEffect(() => {
-    const fetchNearby = async () => {
-      if (!userLat || !userLng) return;
 
-      const { data } = await API.get(
-        `/products/nearby-shops?lat=${userLat}&lng=${userLng}&city=${city}&district=${district}`
-      );
-
-      setShops(data);
-      setViewMode("shops");
-    };
-
-    fetchNearby();
-  }, [userLat, userLng, city, district]);
-
+  // ================= FETCH LOCATIONS =================
   useEffect(() => {
     const fetchLocations = async () => {
-      const { data } = await API.get("/locations");
-      setLocations(data);
+      try {
+        const { data } = await API.get("/locations");
+        setLocations(data);
+      } catch (error) {
+        console.log(error);
+      }
     };
 
     fetchLocations();
   }, []);
 
-  // Fetch products when filters change
+  // ================= FETCH PRODUCTS =================
   useEffect(() => {
     const fetchProducts = async () => {
-      const { data } = await API.get(
-        `/products/public?city=${city}&district=${district}`
-      );
-      setProducts(data);
+      try {
+        const { data } = await API.get(
+          `/products/public?city=${city}&district=${district}`
+        );
+
+        setProducts(data);
+      } catch (error) {
+        console.log(error);
+      }
     };
 
     fetchProducts();
   }, [city, district]);
 
+  // ================= SEARCH =================
   const handleSearch = async () => {
     if (!city || !district) {
       alert("Please select state and district");
       return;
     }
 
-    // 🔥 CASE 1: No search text → show shops
-    if (!search.trim()) {
-      setSelectedCategory("");
+    try {
+      // SHOW SHOPS
+      if (!search.trim()) {
+        setSelectedCategory("");
+        setViewMode("shops");
+
+        const { data } = await API.get(
+          `/products/shops-by-category?city=${city}&district=${district}`
+        );
+
+        setShops(data);
+        return;
+      }
+
+      // SHOW PRODUCTS
+      const { data } = await API.get(
+        `/products/public?search=${search}&city=${city}&district=${district}`
+      );
+
+      setProducts(data);
+      setViewMode("products");
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // ================= CATEGORY =================
+  const handleCategoryClick = async (category: string) => {
+    try {
+      setSelectedCategory(category);
       setViewMode("shops");
 
       const { data } = await API.get(
-        `/products/shops-by-category?city=${city}&district=${district}`
+        `/products/shops-by-category?category=${category}&city=${city}&district=${district}`
       );
 
       setShops(data);
-      return;
+    } catch (error) {
+      console.log(error);
     }
-
-    // 🔥 CASE 2: Search text exists → show products
-    const { data } = await API.get(
-      `/products/public?search=${search}&city=${city}&district=${district}`
-    );
-
-    setProducts(data);
-    setViewMode("products");
   };
 
-
-
-
-  const handleCategoryClick = async (category: string) => {
-    setSelectedCategory(category);
-    setViewMode("shops");
-
-    const { data } = await API.get(
-      `/products/shops-by-category?category=${category}&city=${city}&district=${district}`
-    );
-
-    setShops(data);
-  };
-
-
-
+  // ================= CITY =================
   const handleCityChange = (value: string) => {
     setCity(value);
-    setDistrict(""); // Reset district when city changes
+    setDistrict("");
   };
-  const categories = [
-    {
-      name: "Grocery",
-      image: "https://images.unsplash.com/photo-1542838132-92c53300491e"
-    },
-    {
-      name: "Electronics",
-      image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9"
-    },
-    {
-      name: "Food",
-      image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836"
-    },
-    {
-      name: "Clothes",
-      image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80"
-    },
-    {
-      name: "Others",
-      image: "https://th.bing.com/th/id/OIP.TTk94VnNp9YY3w2BroSZ3AHaGb?w=222&h=192&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3"
-    }
-  ];
 
+  // ================= NEARBY SHOPS =================
   const handleNearbyShops = async () => {
     try {
       navigator.geolocation.getCurrentPosition(async (position) => {
@@ -181,180 +159,268 @@ const BuyerHome = () => {
       console.log(error);
     }
   };
+
+  // ================= CATEGORIES =================
+  const categories = [
+    {
+      name: "Grocery",
+      image:
+        "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1200&auto=format&fit=crop",
+    },
+    {
+      name: "Electronics",
+      image:
+        "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=1200&auto=format&fit=crop",
+    },
+    {
+      name: "Food",
+      image:
+        "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200&auto=format&fit=crop",
+    },
+    {
+      name: "Clothes",
+      image:
+        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=1200&auto=format&fit=crop",
+    },
+    {
+      name: "Others",
+      image:
+        "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1200&auto=format&fit=crop",
+    },
+  ];
+
   return (
-    <div className="bg-slate-50 min-h-screen">
-
+    <div className="min-h-screen bg-[#ffffff] text-[#222222]">
       {/* ================= HERO ================= */}
-      <section
-        className="relative text-white py-24 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: "url('https://t3.ftcdn.net/jpg/01/17/33/22/360_F_117332203_ekwDZkViF6M3itApEFRIH4844XjJ7zEb.jpg')",
-        }}
-      >
+      <section className="relative overflow-hidden">
+        {/* Background */}
+        <div
+          className="absolute inset-0 bg-cover bg-center brightness-75"
+          style={{
+            backgroundImage:
+              "url('https://blog.tripcorner.com/wp-content/uploads/2024/10/1039a94bthumbnail.jpeg')",
+          }}
+        />
 
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <h1 className="text-5xl font-bold mb-4">
-            Find Products From
-            <span className="text-yellow-300"> Local Shops</span>
-          </h1>
-
-          <p className="opacity-90 mb-10 text-lg">
-            Search items available near you and discover trusted vendors.
-          </p>
-
-          {/* Search Bar */}
-          <div className="bg-white shadow-2xl rounded-2xl p-4 flex flex-col md:flex-row gap-4 max-w-5xl mx-auto">
-
-            <select
-              className="p-4 rounded-xl border text-slate-700 w-full md:w-1/4"
-              value={city}
-              onChange={(e) => handleCityChange(e.target.value)}
-            >
-              <option value="">Select State</option>
-              {Object.keys(locations).map((state) => (
-                <option key={state} value={state}>
-                  {state}
-                </option>
-              ))}
-            </select>
-
-            <select
-              className="p-4 rounded-xl border text-slate-700 w-full md:w-1/4"
-              value={district}
-              onChange={(e) => setDistrict(e.target.value)}
-              disabled={!city}
-            >
-              <option value="">Select District</option>
-              {city &&
-                locations[city]?.map((dist) => (
-                  <option key={dist} value={dist}>
-                    {dist}
-                  </option>
-                ))}
-            </select>
-
-            <input
-              className="p-4 rounded-xl border w-full md:w-1/2 text-slate-700"
-              placeholder="Search milk, rice, charger..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-
-            <button
-              onClick={handleSearch}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 rounded-xl font-semibold transition"
-            >
-              Search
-            </button>
-          </div>
-          <div className="mt-8 flex justify-center">
-            <button
-              type="button"
-              onClick={handleNearbyShops}
-              className="bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition cursor-pointer hover:-translate-y-1"
-            >
-                Explore Shops Near Me
-            </button>
-          </div>
+        {/* OVERLAY */}
+        <div className="absolute inset-0 bg-black/30" />
 
 
-        </div>
-      </section>
 
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-black/40" />
 
-      {/* ================= CONTENT ================= */}
-      {/* ================= CONTENT ================= */}
-      <section className="max-w-7xl mx-auto px-6 py-16">
+        {/* Content */}
+        <div className="relative z-10 max-w-7xl mx-auto px-6 pt-28 pb-32">
+          <motion.div
+            initial={{ opacity: 0, y: 35 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+            className="max-w-4xl mx-auto text-center"
+          >
+            <p className="text-white/80 text-sm tracking-[0.3em] uppercase mb-5">
+              Discover Local Shops
+            </p>
 
-        {/* ===== CATEGORY VIEW ===== */}
-        {viewMode === "categories" && (
-          <>
-            <h2 className="text-3xl font-bold mb-10">
-              Browse Categories
-            </h2>
+            <h1 className="text-5xl md:text-7xl font-semibold text-white leading-tight">
+              Everything Nearby,
+              <br />
+              Delivered Through Trust.
+            </h1>
 
-            <div className="grid md:grid-cols-4 gap-8">
-              {categories.map((category) => (
-                <div
-                  key={category.name}
-                  onClick={() => handleCategoryClick(category.name)}
-                  className="cursor-pointer bg-white rounded-2xl shadow-md hover:shadow-xl transition group overflow-hidden"
-                >
-                  <img
-                    src={category.image}
-                    alt={category.name}
-                    className="h-40 w-full object-cover group-hover:scale-105 transition duration-300"
-                  />
-                  <div className="p-5 text-center">
-                    <h3 className="font-semibold text-lg text-slate-700">
-                      {category.name}
-                    </h3>
-                  </div>
+            <p className="text-white/80 text-lg mt-8 max-w-2xl mx-auto leading-relaxed">
+              Explore trusted local stores, discover nearby products, and
+              connect with businesses around your area effortlessly.
+            </p>
+
+            {/* ================= SEARCH BOX ================= */}
+            <div className="mt-14 bg-white rounded-[32px] shadow-2xl border border-white/20 p-4 md:p-5">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* State */}
+                <div className="flex flex-col text-left px-4 py-2 rounded-2xl hover:bg-[#f7f7f7] transition">
+                  <label className="text-xs font-semibold mb-1">
+                    State
+                  </label>
+
+                  <select
+                    className="bg-transparent outline-none text-sm text-[#717171]"
+                    value={city}
+                    onChange={(e) => handleCityChange(e.target.value)}
+                  >
+                    <option value="">Select State</option>
+
+                    {Object.keys(locations).map((state) => (
+                      <option key={state} value={state}>
+                        {state}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              ))}
-            </div>
-          </>
-        )}
 
-        {/* ===== SHOPS VIEW ===== */}
-        {viewMode === "shops" && (
-          <>
-            <div className="flex flex-wrap gap-4 justify-between items-center mb-8">
-              <h2 className="text-3xl font-bold">
-                {selectedCategory === "Nearby"
-                  ? "Shops Near You (Within 30km)"
-                  : `${selectedCategory} Shops`}
-              </h2>
+                {/* District */}
+                <div className="flex flex-col text-left px-4 py-2 rounded-2xl hover:bg-[#f7f7f7] transition">
+                  <label className="text-xs font-semibold mb-1">
+                    District
+                  </label>
 
+                  <select
+                    className="bg-transparent outline-none text-sm text-[#717171]"
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                    disabled={!city}
+                  >
+                    <option value="">Select District</option>
 
-              <div className="flex gap-3">
+                    {city &&
+                      locations[city]?.map((dist) => (
+                        <option key={dist} value={dist}>
+                          {dist}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                {/* Search */}
+                <div className="flex flex-col text-left px-4 py-2 rounded-2xl hover:bg-[#f7f7f7] transition md:col-span-2">
+                  <label className="text-xs font-semibold mb-1">
+                    Search
+                  </label>
+
+                  <input
+                    type="text"
+                    placeholder="Search milk, chargers, groceries..."
+                    className="bg-transparent outline-none text-sm placeholder:text-[#9a9a9a]"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex flex-col md:flex-row gap-4 mt-5">
                 <button
-                  onClick={() => setViewMode("categories")}
-                  className="text-sm bg-slate-100 px-4 py-2 rounded-lg hover:bg-slate-200 transition"
+                  onClick={handleSearch}
+                  className="flex-1 bg-[#FF385C] hover:bg-[#e03150] text-white py-4 rounded-2xl font-medium transition-all duration-300 hover:scale-[1.01]"
                 >
-                  ← Categories
+                  Search Nearby Shops
                 </button>
 
                 <button
                   onClick={handleNearbyShops}
-                  className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                  className="flex-1 border border-[#dddddd] hover:border-[#222222] py-4 rounded-2xl font-medium transition-all duration-300"
                 >
-                  📍 Near Me (30km)
+                  Explore Near Me
                 </button>
               </div>
             </div>
+          </motion.div>
+        </div>
+      </section>
 
+      {/* ================= CONTENT ================= */}
+      <section className="max-w-7xl mx-auto px-6 py-20 space-y-20">
+        {/* ================= CATEGORIES ================= */}
+        {viewMode === "categories" && (
+          <div>
+            <div className="flex items-center justify-between mb-10">
+              <div>
+                <h2 className="text-4xl font-semibold tracking-tight">
+                  Browse Categories
+                </h2>
+
+                <p className="text-[#717171] mt-2">
+                  Explore products from local businesses around you.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-8">
+              {categories.map((category) => (
+                <motion.div
+                  whileHover={{ y: -8 }}
+                  key={category.name}
+                  onClick={() => handleCategoryClick(category.name)}
+                  className="group cursor-pointer"
+                >
+                  <div className="relative overflow-hidden rounded-[30px] aspect-[4/5]">
+                    <img
+                      src={category.image}
+                      alt={category.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
+                    />
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+
+                    <div className="absolute bottom-6 left-6">
+                      <h3 className="text-white text-2xl font-semibold">
+                        {category.name}
+                      </h3>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ================= SHOPS ================= */}
+        {viewMode === "shops" && (
+          <div>
+            <div className="flex flex-wrap justify-between gap-4 items-center mb-10">
+              <div>
+                <h2 className="text-4xl font-semibold tracking-tight">
+                  {selectedCategory === "Nearby"
+                    ? "Shops Near You"
+                    : `${selectedCategory} Shops`}
+                </h2>
+
+                <p className="text-[#717171] mt-2">
+                  Explore trusted local businesses around your location.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setViewMode("categories")}
+                className="border border-[#dddddd] px-6 py-3 rounded-full hover:shadow-md transition"
+              >
+                Back
+              </button>
+            </div>
 
             {shops.length === 0 ? (
-              <div className="bg-white p-10 rounded-xl text-center shadow-sm">
-                <p className="text-slate-500">
-                  No shops found in this category.
+              <div className="bg-[#f7f7f7] rounded-[28px] p-16 text-center">
+                <p className="text-[#717171] text-lg">
+                  No shops found.
                 </p>
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
                 {shops.map((shop) => (
-                  <div
+                  <motion.div
+                    whileHover={{ y: -8 }}
                     key={shop._id}
                     onClick={() => navigate(`/shop/${shop._id}`)}
-                    className="group cursor-pointer bg-white rounded-2xl shadow-sm hover:shadow-2xl transition-all duration-300 overflow-hidden border border-slate-100 hover:-translate-y-1"
+                    className="cursor-pointer group"
                   >
-
                     {/* Banner */}
-                    <div className="h-28 bg-slate-100 relative">
+                    <div className="relative overflow-hidden rounded-[28px] aspect-[4/4.5]">
                       {shop.bannerImage ? (
                         <img
                           src={shop.bannerImage}
                           alt={shop.shopName}
-                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          className="w-full h-full object-cover transition duration-700 group-hover:scale-105"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-r from-blue-500 to-indigo-500" />
+                        <div className="w-full h-full bg-[#f3f3f3]" />
                       )}
 
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
                       {/* Logo */}
-                      <div className="absolute -bottom-8 left-4">
-                        <div className="w-16 h-16 rounded-full border-4 border-white bg-white overflow-hidden shadow-md">
+                      <div className="absolute top-5 left-5">
+                        <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white bg-white shadow-md">
                           {shop.logoImage ? (
                             <img
                               src={shop.logoImage}
@@ -362,93 +428,100 @@ const BuyerHome = () => {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-lg font-bold text-blue-600 bg-blue-50">
+                            <div className="w-full h-full flex items-center justify-center font-semibold text-[#FF385C]">
                               {shop.shopName?.charAt(0)}
                             </div>
                           )}
                         </div>
                       </div>
+
+                      {/* Content */}
+                      <div className="absolute bottom-5 left-5 right-5 text-white">
+                        <h3 className="text-2xl font-semibold">
+                          {shop.shopName}
+                        </h3>
+
+                        <p className="text-sm text-white/80 mt-1">
+                          {shop.area}, {shop.city}
+                        </p>
+                      </div>
                     </div>
-
-                    {/* Content */}
-                    <div className="pt-10 p-4">
-                      <h3 className="text-lg font-semibold text-slate-800 group-hover:text-blue-600 transition">
-                        {shop.shopName}
-                      </h3>
-
-                      <p className="text-sm text-slate-500 mt-1">
-                        📍 {shop.area}, {shop.city}
-                      </p>
-
-                      <button className="mt-4 w-full bg-slate-50 hover:bg-blue-50 text-blue-600 font-medium py-2 rounded-lg transition">
-                        View Shop →
-                      </button>
-                    </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
-
             )}
-          </>
+          </div>
         )}
 
-
-        {/* ===== PRODUCTS VIEW ===== */}
+        {/* ================= PRODUCTS ================= */}
         {viewMode === "products" && (
-          <>
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-3xl font-bold">
-                Search Results
-              </h2>
+          <div>
+            <div className="flex flex-wrap justify-between gap-4 items-center mb-10">
+              <div>
+                <h2 className="text-4xl font-semibold tracking-tight">
+                  Search Results
+                </h2>
+
+                <p className="text-[#717171] mt-2">
+                  Products available nearby.
+                </p>
+              </div>
 
               <button
                 onClick={() => setViewMode("categories")}
-                className="text-sm bg-slate-100 px-4 py-2 rounded-lg hover:bg-slate-200 transition"
+                className="border border-[#dddddd] px-6 py-3 rounded-full hover:shadow-md transition"
               >
-                ← Back to Categories
+                Back
               </button>
             </div>
 
             {products.length === 0 ? (
-              <div className="bg-white p-10 rounded-xl text-center shadow-sm">
-                <p className="text-slate-500">
+              <div className="bg-[#f7f7f7] rounded-[28px] p-16 text-center">
+                <p className="text-[#717171] text-lg">
                   No products found.
                 </p>
               </div>
             ) : (
-              <div className="grid md:grid-cols-3 gap-10">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
                 {products.map((product) => (
                   <motion.div
+                    whileHover={{ y: -8 }}
                     key={product._id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition border border-slate-100 overflow-hidden"
+                    className="group cursor-pointer"
                   >
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="h-52 w-full object-cover"
-                    />
+                    {/* Image */}
+                    <div className="overflow-hidden rounded-[28px] aspect-[4/5]">
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        loading="lazy"
+                        className="w-full h-full object-cover transition duration-700 group-hover:scale-105"
+                      />
+                    </div>
 
-                    <div className="p-6">
-                      <h3 className="text-lg font-semibold mb-2 text-slate-800">
-                        {product.name}
-                      </h3>
+                    {/* Content */}
+                    <div className="pt-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="font-semibold text-lg">
+                            {product.name}
+                          </h3>
 
-                      <p className="text-xl font-bold text-blue-600 mb-2">
-                        ₹{product.price}
-                      </p>
+                          <p className="text-sm text-[#717171] mt-1">
+                            {product.seller.shopName}
+                          </p>
+                        </div>
 
-                      <p className="text-sm text-slate-500 mb-3">
-                        {product.seller.shopName}
-                      </p>
+                        <p className="font-semibold text-lg">
+                          ₹{product.price}
+                        </p>
+                      </div>
 
                       <button
                         onClick={() =>
                           navigate(`/shop/${product.seller._id}`)
                         }
-                        className="w-full border border-slate-300 hover:bg-slate-100 py-2 rounded-lg text-sm font-medium transition"
+                        className="mt-5 w-full border border-[#dddddd] hover:border-[#222222] py-3 rounded-2xl transition-all duration-300"
                       >
                         View Shop
                       </button>
@@ -457,14 +530,11 @@ const BuyerHome = () => {
                 ))}
               </div>
             )}
-          </>
+          </div>
         )}
-
       </section>
-
     </div>
   );
-
 };
 
 export default BuyerHome;

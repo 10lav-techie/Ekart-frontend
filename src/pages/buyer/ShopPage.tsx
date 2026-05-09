@@ -1,5 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useContext,
+} from "react";
+import {
+  CartContext,
+} from "../../context/CartContext";
+import {
+  useParams,
+  useNavigate,
+} from "react-router-dom";
+
+import {
+  motion,
+  AnimatePresence,
+} from "framer-motion";
+
 import API from "../../services/api";
 
 interface Seller {
@@ -24,249 +41,674 @@ interface Product {
 }
 
 const ShopPage = () => {
-  const { sellerId } = useParams();
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const { sellerId } =
+    useParams();
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [showAvailableOnly, setShowAvailableOnly] = useState(false);
-  const [sortOption, setSortOption] = useState("newest");
+  const navigate =
+    useNavigate();
+  const {
+    addToCart: addToCartContext,
+  } = useContext(
+    CartContext
+  );
+  const [
+    selectedProduct,
+    setSelectedProduct,
+  ] = useState<Product | null>(
+    null
+  );
 
+  const [products, setProducts] =
+    useState<Product[]>([]);
+
+  const [
+    showAvailableOnly,
+    setShowAvailableOnly,
+  ] = useState(false);
+
+  const [sortOption, setSortOption] =
+    useState("newest");
+
+  const [addingId, setAddingId] =
+    useState("");
+
+  const user = JSON.parse(
+    localStorage.getItem("user") ||
+      "null"
+  );
+
+  // =====================================================
+  // FETCH SHOP
+  // =====================================================
   useEffect(() => {
-    const fetchShop = async () => {
-      const { data } = await API.get(
-        `/products/shop/${sellerId}`
-      );
-      setProducts(data);
-    };
+    const fetchShop =
+      async () => {
+        try {
+          const { data } =
+            await API.get(
+              `/products/shop/${sellerId}`
+            );
+
+          setProducts(data);
+        } catch (error) {
+          console.log(error);
+        }
+      };
 
     fetchShop();
   }, [sellerId]);
 
-  const filteredProducts = useMemo(() => {
-    let filtered = [...products];
+  // =====================================================
+  // ADD TO CART
+  // =====================================================
+  const addToCart = async (
+    productId: string
+  ) => {
+    // LOGIN CHECK
+    if (!user) {
+      alert(
+        "Please login as buyer first"
+      );
 
-    if (showAvailableOnly) {
-      filtered = filtered.filter(
-        (p) => p.inStock !== false
+      return navigate("/login");
+    }
+
+    // BUYER CHECK
+    if (user.role !== "buyer") {
+      return alert(
+        "Only buyers can add to cart"
       );
     }
 
-    if (sortOption === "low-high") {
-      filtered.sort((a, b) => a.price - b.price);
-    } else if (sortOption === "high-low") {
-      filtered.sort((a, b) => b.price - a.price);
-    } else if (sortOption === "newest") {
-      filtered.sort(
-        (a, b) =>
-          new Date(b.createdAt || "").getTime() -
-          new Date(a.createdAt || "").getTime()
+    try {
+      setAddingId(productId);
+
+      // CONTEXT ADD
+      await addToCartContext(
+        productId,
+        1
       );
+
+      alert(
+        "Added to cart"
+      );
+    } catch (error: any) {
+      alert(
+        error.response?.data
+          ?.message ||
+          "Failed to add to cart"
+      );
+    } finally {
+      setAddingId("");
     }
+  };
 
-    return filtered;
-  }, [products, showAvailableOnly, sortOption]);
+  // =====================================================
+  // FILTER PRODUCTS
+  // =====================================================
+  const filteredProducts =
+    useMemo(() => {
+      let filtered = [...products];
 
-  if (!products.length)
-    return <p className="p-10">Loading...</p>;
+      if (showAvailableOnly) {
+        filtered = filtered.filter(
+          (p) =>
+            p.inStock !== false
+        );
+      }
+
+      if (
+        sortOption ===
+        "low-high"
+      ) {
+        filtered.sort(
+          (a, b) =>
+            a.price - b.price
+        );
+      } else if (
+        sortOption ===
+        "high-low"
+      ) {
+        filtered.sort(
+          (a, b) =>
+            b.price - a.price
+        );
+      } else if (
+        sortOption ===
+        "newest"
+      ) {
+        filtered.sort(
+          (a, b) =>
+            new Date(
+              b.createdAt || ""
+            ).getTime() -
+            new Date(
+              a.createdAt || ""
+            ).getTime()
+        );
+      }
+
+      return filtered;
+    }, [
+      products,
+      showAvailableOnly,
+      sortOption,
+    ]);
+
+  // =====================================================
+  // LOADING
+  // =====================================================
+  if (!products.length) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <p className="animate-pulse text-[#717171]">
+          Loading shop...
+        </p>
+      </div>
+    );
+  }
 
   const shop = products[0].seller;
 
   return (
-    <div className="bg-slate-50 min-h-screen">
+    <div className="min-h-screen bg-white text-[#222222]">
 
-      {/* ================= BANNER ================= */}
-      <div className="relative h-64 bg-slate-200">
-        {shop.bannerImage ? (
-          <img
-            src={shop.bannerImage}
-            alt="Shop Banner"
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-slate-400">
-            No Banner Image
-          </div>
-        )}
+      {/* ===================================================== */}
+      {/* HERO */}
+      {/* ===================================================== */}
+      <section className="relative">
 
-        {/* Logo Avatar */}
-        <div className="absolute -bottom-12 left-12">
-          <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white">
-            {shop.logoImage ? (
-              <img
-                src={shop.logoImage}
-                alt="Shop Logo"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full text-slate-400 text-sm">
-                Logo
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+        {/* BANNER */}
+        <div className="relative h-[240px] md:h-[320px] overflow-hidden">
 
-      {/* ================= SHOP INFO ================= */}
-      <div className="max-w-7xl mx-auto px-6 pt-20 pb-10">
-
-        <h2 className="text-3xl font-bold text-slate-800">
-          {shop.shopName}
-        </h2>
-
-        <p className="text-slate-500 mt-1">
-          📍 {shop.city}, {shop.area}
-        </p>
-
-        <p className="text-sm text-slate-400">
-          {shop.address}
-        </p>
-
-        {/* FILTER + SORT */}
-        <div className="flex justify-between items-center flex-wrap gap-4 mt-8 mb-10">
-
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showAvailableOnly}
-              onChange={() =>
-                setShowAvailableOnly((prev) => !prev)
+          {shop.bannerImage ? (
+            <img
+              src={
+                shop.bannerImage
               }
+              alt="Shop Banner"
+              loading="lazy"
+              className="w-full h-full object-cover"
             />
-            Available Only
-          </label>
+          ) : (
+            <div className="w-full h-full bg-[#f3f3f3]" />
+          )}
 
-          <select
-            value={sortOption}
-            onChange={(e) =>
-              setSortOption(e.target.value)
-            }
-            className="border px-4 py-2 rounded-lg text-sm"
-          >
-            <option value="newest">Newest</option>
-            <option value="low-high">
-              Price: Low → High
-            </option>
-            <option value="high-low">
-              Price: High → Low
-            </option>
-          </select>
+          {/* OVERLAY */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+          {/* BACK BUTTON */}
+          <div className="absolute top-5 left-5 z-20">
+
+            <button
+              onClick={() =>
+                navigate(-1)
+              }
+              className="bg-white/90 backdrop-blur-xl hover:bg-white px-5 py-2.5 rounded-full text-sm font-medium shadow-sm transition-all duration-300"
+            >
+              ← Back
+            </button>
+          </div>
+
+          {/* CONTENT */}
+          <div className="absolute bottom-6 left-0 right-0">
+
+            <div className="max-w-[1400px] mx-auto px-5">
+
+              <motion.div
+                initial={{
+                  opacity: 0,
+                  y: 20,
+                }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                }}
+                transition={{
+                  duration: 0.4,
+                }}
+                className="flex items-end justify-between gap-6"
+              >
+
+                {/* LEFT */}
+                <div className="flex items-end gap-4">
+
+                  {/* LOGO */}
+                  <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-white bg-white shadow-lg">
+
+                    {shop.logoImage ? (
+                      <img
+                        src={
+                          shop.logoImage
+                        }
+                        alt="Shop Logo"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-2xl font-semibold text-[#FF385C]">
+                        {shop.shopName?.charAt(
+                          0
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* TEXT */}
+                  <div className="text-white">
+
+                    <p className="uppercase tracking-[0.2em] text-xs text-white/70 mb-2">
+                      Local Store
+                    </p>
+
+                    <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
+                      {shop.shopName}
+                    </h1>
+
+                    <p className="text-white/80 text-sm mt-2">
+                      {shop.city},{" "}
+                      {shop.area}
+                    </p>
+
+                    <p className="text-white/60 text-sm mt-1">
+                      {shop.address}
+                    </p>
+                  </div>
+                </div>
+
+                {/* CALL BUTTON */}
+                {shop.phone && (
+                  <button
+                    onClick={() =>
+                      window.open(
+                        `tel:${shop.phone}`
+                      )
+                    }
+                    className="bg-white text-[#222222] hover:bg-[#f3f3f3] px-6 py-3 rounded-full text-sm font-medium transition-all duration-300"
+                  >
+                    Call Shop
+                  </button>
+                )}
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===================================================== */}
+      {/* MAIN */}
+      {/* ===================================================== */}
+      <main className="max-w-[1400px] mx-auto px-5 py-10">
+
+        {/* ===================================================== */}
+        {/* FILTER BAR */}
+        {/* ===================================================== */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 mb-8">
+
+          {/* LEFT */}
+          <div>
+
+            <h2 className="text-3xl font-semibold tracking-tight">
+              Products
+            </h2>
+
+            <p className="text-[#717171] mt-1 text-sm">
+              Browse products available
+              in this local shop.
+            </p>
+          </div>
+
+          {/* RIGHT */}
+          <div className="flex flex-wrap items-center gap-3">
+
+            {/* AVAILABLE */}
+            <label className="flex items-center gap-3 border border-[#dddddd] px-4 py-3 rounded-full text-sm cursor-pointer hover:border-[#222222] transition">
+
+              <input
+                type="checkbox"
+                checked={
+                  showAvailableOnly
+                }
+                onChange={() =>
+                  setShowAvailableOnly(
+                    (prev) => !prev
+                  )
+                }
+                className="accent-[#FF385C]"
+              />
+
+              Available Only
+            </label>
+
+            {/* SORT */}
+            <select
+              value={sortOption}
+              onChange={(e) =>
+                setSortOption(
+                  e.target.value
+                )
+              }
+              className="border border-[#dddddd] px-4 py-3 rounded-full text-sm outline-none hover:border-[#222222] transition bg-white"
+            >
+              <option value="newest">
+                Newest First
+              </option>
+
+              <option value="low-high">
+                Price: Low → High
+              </option>
+
+              <option value="high-low">
+                Price: High → Low
+              </option>
+            </select>
+          </div>
         </div>
 
-        {/* ================= PRODUCTS ================= */}
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-          {filteredProducts.map((product) => (
-            <div
-              key={product._id}
-              className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition border border-slate-100 overflow-hidden group"
-            >
-              {/* Product Image */}
-              <div className="relative h-44 bg-slate-100">
-                {product.image ? (
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full text-slate-400">
-                    No Image
-                  </div>
-                )}
+        {/* ===================================================== */}
+        {/* PRODUCTS */}
+        {/* ===================================================== */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-6">
 
-                <div className="absolute top-3 right-3">
-                  {product.inStock !== false ? (
-                    <span className="bg-green-500 text-white text-xs px-3 py-1 rounded-full">
-                      Available
-                    </span>
+          {filteredProducts.map(
+            (product) => (
+              <motion.div
+                whileHover={{
+                  y: -4,
+                }}
+                key={product._id}
+                className="group"
+              >
+
+                {/* IMAGE */}
+                <div className="relative overflow-hidden rounded-2xl aspect-square bg-[#f7f7f7]">
+
+                  {product.image ? (
+                    <img
+                      src={
+                        product.image
+                      }
+                      alt={
+                        product.name
+                      }
+                      loading="lazy"
+                      className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+                    />
                   ) : (
-                    <span className="bg-red-500 text-white text-xs px-3 py-1 rounded-full">
-                      Out of Stock
-                    </span>
+                    <div className="w-full h-full flex items-center justify-center text-[#999999] text-sm">
+                      No Image
+                    </div>
                   )}
+
+                  {/* STOCK */}
+                  <div className="absolute top-3 right-3">
+
+                    {product.inStock !==
+                    false ? (
+                      <div className="bg-white/90 backdrop-blur-xl px-3 py-1 rounded-full text-[11px] font-medium">
+                        Available
+                      </div>
+                    ) : (
+                      <div className="bg-black/80 text-white px-3 py-1 rounded-full text-[11px] font-medium">
+                        Out of Stock
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* CONTENT */}
+                <div className="pt-3">
+
+                  <div className="flex items-start justify-between gap-2">
+
+                    <div className="min-w-0">
+
+                      <h3 className="font-medium text-sm line-clamp-1">
+                        {
+                          product.name
+                        }
+                      </h3>
+
+                      {product.description && (
+                        <p className="text-xs text-[#717171] line-clamp-1 mt-1">
+                          {
+                            product.description
+                          }
+                        </p>
+                      )}
+                    </div>
+
+                    <p className="font-semibold text-sm whitespace-nowrap">
+                      ₹
+                      {product.price}
+                    </p>
+                  </div>
+
+                  {/* ACTIONS */}
+                  <div className="flex gap-2 mt-3">
+
+                    {/* VIEW */}
+                    <button
+                      onClick={() =>
+                        setSelectedProduct(
+                          product
+                        )
+                      }
+                      className="flex-1 border border-[#dddddd] hover:border-[#222222] py-2.5 rounded-xl text-sm font-medium transition-all duration-300"
+                    >
+                      View
+                    </button>
+
+                    {/* ADD TO CART */}
+                    {product.inStock !==
+                      false && (
+                      <button
+                        onClick={() =>
+                          addToCart(
+                            product._id
+                          )
+                        }
+                        disabled={
+                          addingId ===
+                          product._id
+                        }
+                        className="flex-1 bg-[#FF385C] hover:bg-[#e03150] disabled:opacity-60 text-white py-2.5 rounded-xl text-sm font-medium transition-all duration-300"
+                      >
+                        {addingId ===
+                        product._id
+                          ? "Adding..."
+                          : "Add"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )
+          )}
+        </div>
+      </main>
+
+      {/* ===================================================== */}
+      {/* MODAL */}
+      {/* ===================================================== */}
+      <AnimatePresence>
+
+        {selectedProduct && (
+          <motion.div
+            initial={{
+              opacity: 0,
+            }}
+            animate={{
+              opacity: 1,
+            }}
+            exit={{
+              opacity: 0,
+            }}
+            onClick={() =>
+              setSelectedProduct(
+                null
+              )
+            }
+            className="fixed inset-0 bg-black/50 backdrop-blur-md z-50 flex items-center justify-center px-4"
+          >
+
+            {/* MODAL */}
+            <motion.div
+              initial={{
+                opacity: 0,
+                y: 20,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              exit={{
+                opacity: 0,
+                y: 20,
+              }}
+              transition={{
+                duration: 0.2,
+              }}
+              onClick={(e) =>
+                e.stopPropagation()
+              }
+              className="bg-white w-full max-w-4xl rounded-[28px] overflow-hidden shadow-2xl"
+            >
+
+              <div className="grid md:grid-cols-2">
+
+                {/* IMAGE */}
+                <div className="bg-[#f7f7f7]">
+
+                  <img
+                    src={
+                      selectedProduct.image
+                    }
+                    alt={
+                      selectedProduct.name
+                    }
+                    className="w-full h-full object-cover md:h-[500px]"
+                  />
+                </div>
+
+                {/* CONTENT */}
+                <div className="p-8 flex flex-col justify-between">
+
+                  <div>
+
+                    {/* CLOSE */}
+                    <div className="flex justify-end">
+
+                      <button
+                        onClick={() =>
+                          setSelectedProduct(
+                            null
+                          )
+                        }
+                        className="w-9 h-9 rounded-full border border-[#dddddd] hover:border-[#222222] transition"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* TITLE */}
+                    <div className="mt-4">
+
+                      <p className="uppercase tracking-[0.2em] text-xs text-[#717171] mb-3">
+                        Product Details
+                      </p>
+
+                      <h2 className="text-3xl font-semibold tracking-tight">
+                        {
+                          selectedProduct.name
+                        }
+                      </h2>
+
+                      <div className="flex items-center gap-3 mt-4">
+
+                        <p className="text-2xl font-semibold">
+                          ₹
+                          {
+                            selectedProduct.price
+                          }
+                        </p>
+
+                        {selectedProduct.inStock !==
+                        false ? (
+                          <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">
+                            In Stock
+                          </div>
+                        ) : (
+                          <div className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-medium">
+                            Out of Stock
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* DESCRIPTION */}
+                    <div className="mt-8 border-t border-[#eeeeee] pt-6">
+
+                      <h3 className="font-semibold text-lg mb-3">
+                        About Product
+                      </h3>
+
+                      <p className="text-[#717171] text-sm leading-relaxed">
+                        {selectedProduct.description ||
+                          "No description available for this product."}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* ACTIONS */}
+                  <div className="grid grid-cols-2 gap-4 mt-8">
+
+                    {/* ADD TO CART */}
+                    {selectedProduct.inStock !==
+                    false ? (
+                      <button
+                        onClick={() =>
+                          addToCart(
+                            selectedProduct._id
+                          )
+                        }
+                        disabled={
+                          addingId ===
+                          selectedProduct._id
+                        }
+                        className="bg-[#FF385C] hover:bg-[#e03150] disabled:opacity-60 text-white py-3 rounded-xl font-medium transition-all duration-300"
+                      >
+                        {addingId ===
+                        selectedProduct._id
+                          ? "Adding..."
+                          : "Add To Cart"}
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        className="bg-[#dddddd] text-[#717171] py-3 rounded-xl font-medium cursor-not-allowed"
+                      >
+                        Out Of Stock
+                      </button>
+                    )}
+
+                    {/* CLOSE */}
+                    <button
+                      onClick={() =>
+                        setSelectedProduct(
+                          null
+                        )
+                      }
+                      className="border border-[#dddddd] hover:border-[#222222] py-3 rounded-xl font-medium transition-all duration-300"
+                    >
+                      Close
+                    </button>
+                  </div>
                 </div>
               </div>
-
-              <div className="p-6">
-                <h3 className="font-semibold text-lg text-slate-800 mb-2 line-clamp-1">
-                  {product.name}
-                </h3>
-
-                <p className="text-xl font-bold text-blue-600 mb-3">
-                  ₹{product.price}
-                </p>
-
-                {product.description && (
-                  <p className="text-sm text-slate-500 line-clamp-2">
-                    {product.description}
-                  </p>
-                )}
-
-                <button
-                  onClick={() => setSelectedProduct(product)}
-                  className="w-full border border-slate-300 hover:bg-slate-100 py-2 rounded-lg text-sm font-medium transition"
-                >
-                  View Details
-                </button>
-
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ================= FLOATING CALL BUTTON ================= */}
-      {shop.phone && (
-        <button
-          onClick={() =>
-            window.open(`tel:${shop.phone}`)
-          }
-          className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full shadow-lg transition"
-        >
-          📞 Call Shop
-        </button>
-      )}
-      {selectedProduct && (
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4"
-          onClick={() => setSelectedProduct(null)}
-        >
-          {/* Card */}
-          <div
-            className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-fadeIn"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Image */}
-            <img
-              src={selectedProduct.image}
-              alt={selectedProduct.name}
-              className="w-full h-56 object-cover"
-            />
-
-            {/* Content */}
-            <div className="p-6">
-              <h2 className="text-2xl font-bold text-slate-800 mb-2">
-                {selectedProduct.name}
-              </h2>
-
-              <p className="text-blue-600 text-xl font-semibold mb-3">
-                ₹{selectedProduct.price}
-              </p>
-
-              <p className="text-slate-600 mb-4">
-                {selectedProduct.description || "No description available."}
-              </p>
-
-              <button
-                onClick={() => setSelectedProduct(null)}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-medium transition"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

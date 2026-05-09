@@ -1,5 +1,13 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  useNavigate,
+} from "react-router-dom";
+
 import API from "../../services/api";
 
 interface Locations {
@@ -7,231 +15,596 @@ interface Locations {
 }
 
 const EditProfile = () => {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
-  const [loading, setLoading] = useState(false);
-  const [locations, setLocations] = useState<Locations>({});
+  // =====================================================
+  // STATES
+  // =====================================================
+  const [loading, setLoading] =
+    useState(false);
 
-  const [ownerName, setOwnerName] = useState("");
-  const [shopName, setShopName] = useState("");
-  const [city, setCity] = useState("");
-  const [district, setDistrict] = useState("");
-  const [area, setArea] = useState("");
-  const [address, setAddress] = useState("");
-  const [phone, setPhone] = useState("");
-  const [bannerImage, setBannerImage] = useState("");
-  const [logoImage, setLogoImage] = useState("");
-  const [lat, setLat] = useState<number | null>(null);
-  const [lng, setLng] = useState<number | null>(null);
+  const [locations, setLocations] =
+    useState<Locations>(
+      {}
+    );
 
+  // =====================================================
+  // FORM STATES
+  // =====================================================
+  const [
+    ownerName,
+    setOwnerName,
+  ] = useState("");
+
+  const [
+    shopName,
+    setShopName,
+  ] = useState("");
+
+  const [city, setCity] =
+    useState("");
+
+  const [
+    district,
+    setDistrict,
+  ] = useState("");
+
+  const [area, setArea] =
+    useState("");
+
+  const [
+    address,
+    setAddress,
+  ] = useState("");
+
+  const [phone, setPhone] =
+    useState("");
+
+  const [
+    bannerImage,
+    setBannerImage,
+  ] = useState("");
+
+  const [
+    logoImage,
+    setLogoImage,
+  ] = useState("");
+
+  const [lat, setLat] =
+    useState<
+      number | null
+    >(null);
+
+  const [lng, setLng] =
+    useState<
+      number | null
+    >(null);
+
+  // =====================================================
+  // FETCH PROFILE + LOCATIONS
+  // =====================================================
   useEffect(() => {
-    const fetchData = async () => {
-      const [profileRes, locationRes] = await Promise.all([
-        API.get("/seller/profile"),
-        API.get("/locations"),
-      ]);
+    const fetchData =
+      async () => {
+        try {
+          setLoading(true);
 
-      const data = profileRes.data;
+          // =====================================================
+          // FETCH BOTH APIs
+          // =====================================================
+          const [
+            profileRes,
+            locationRes,
+          ] =
+            await Promise.all(
+              [
+                API.get(
+                  "/auth/profile"
+                ),
 
-      setOwnerName(data.ownerName);
-      setShopName(data.shopName);
-      setCity(data.city);
-      setDistrict(data.district);
-      setArea(data.area);
-      setAddress(data.address);
-      if (data.location?.coordinates) {
-        setLng(data.location.coordinates[0]);
-        setLat(data.location.coordinates[1]);
-      }
+                API.get(
+                  "/locations"
+                ),
+              ]
+            );
 
+          // =====================================================
+          // PROFILE DATA
+          // =====================================================
+          const data =
+            profileRes.data;
 
-      setPhone(data.phone || "");
-      setBannerImage(data.bannerImage || "");
-      setLogoImage(data.logoImage || "");
+          setOwnerName(
+            data.ownerName ||
+              ""
+          );
 
-      setLocations(locationRes.data);
-    };
+          setShopName(
+            data.shopName ||
+              ""
+          );
+
+          setCity(
+            data.city ||
+              ""
+          );
+
+          setDistrict(
+            data.district ||
+              ""
+          );
+
+          setArea(
+            data.area ||
+              ""
+          );
+
+          setAddress(
+            data.address ||
+              ""
+          );
+
+          setPhone(
+            data.phone ||
+              ""
+          );
+
+          setBannerImage(
+            data.bannerImage ||
+              ""
+          );
+
+          setLogoImage(
+            data.logoImage ||
+              ""
+          );
+
+          // =====================================================
+          // COORDINATES
+          // =====================================================
+          if (
+            data.location
+              ?.coordinates
+          ) {
+            setLng(
+              data.location
+                .coordinates[0]
+            );
+
+            setLat(
+              data.location
+                .coordinates[1]
+            );
+          }
+
+          // =====================================================
+          // LOCATION DROPDOWNS
+          // =====================================================
+          setLocations(
+            locationRes.data
+          );
+
+          console.log(
+            "LOCATIONS:",
+            locationRes.data
+          );
+        } catch (error) {
+          console.log(
+            "PROFILE ERROR:",
+            error
+          );
+
+          alert(
+            "Failed to load profile data"
+          );
+        } finally {
+          setLoading(false);
+        }
+      };
 
     fetchData();
   }, []);
 
-  const handleCityChange = (value: string) => {
+  // =====================================================
+  // CITY CHANGE
+  // =====================================================
+  const handleCityChange = (
+    value: string
+  ) => {
     setCity(value);
+
     setDistrict("");
   };
-  const handleGetLocation = () => {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLat(position.coords.latitude);
-        setLng(position.coords.longitude);
-        alert("Location captured successfully");
-      },
-      (_error) => {
-        alert("Location permission denied");
+
+  // =====================================================
+  // GET CURRENT LOCATION
+  // =====================================================
+  const handleGetLocation =
+    () => {
+      navigator.geolocation.getCurrentPosition(
+        (
+          position
+        ) => {
+          setLat(
+            position.coords
+              .latitude
+          );
+
+          setLng(
+            position.coords
+              .longitude
+          );
+
+          alert(
+            "Location updated successfully"
+          );
+        },
+
+        () => {
+          alert(
+            "Location permission denied"
+          );
+        }
+      );
+    };
+
+  // =====================================================
+  // UPDATE PROFILE
+  // =====================================================
+  const handleUpdate =
+    async (
+      e: React.FormEvent
+    ) => {
+      e.preventDefault();
+
+      try {
+        setLoading(true);
+
+        await API.put(
+          "/auth/profile",
+          {
+            ownerName,
+
+            shopName,
+
+            city,
+
+            district,
+
+            area,
+
+            address,
+
+            lat,
+
+            lng,
+
+            phone,
+
+            bannerImage,
+
+            logoImage,
+          }
+        );
+
+        alert(
+          "Profile updated successfully!"
+        );
+
+        navigate(
+          "/seller/dashboard"
+        );
+      } catch (error: any) {
+        console.log(error);
+
+        alert(
+          error.response
+            ?.data
+            ?.message ||
+            "Update failed"
+        );
+      } finally {
+        setLoading(false);
       }
+    };
+
+  // =====================================================
+  // LOADING UI
+  // =====================================================
+  if (loading) {
+    return (
+      <div className="min-h-screen flex justify-center items-center bg-[#f7f7f7]">
+        <p className="text-[#717171] text-lg">
+          Loading profile...
+        </p>
+      </div>
     );
-  };
+  }
 
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      await API.put("/seller/profile", {
-        ownerName,
-        shopName,
-        city,
-        district,
-        area,
-        address,
-        lat,
-        lng,
-        phone,
-        bannerImage,
-        logoImage,
-      });
-
-      alert("Profile updated successfully!");
-      navigate("/seller/dashboard");
-    } catch (error: any) {
-      alert(error.response?.data?.message || "Update failed");
-    }
-
-    setLoading(false);
-  };
-
+  // =====================================================
+  // MAIN UI
+  // =====================================================
   return (
-    <div className="bg-slate-50 min-h-screen py-12 px-6">
-      <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+    <div className="min-h-screen bg-[#f7f7f7] py-12 px-4">
 
-        <h2 className="text-3xl font-bold mb-8 text-slate-800">
-          Edit Shop Profile
-        </h2>
+      <div className="max-w-4xl mx-auto bg-white rounded-[32px] shadow-sm border border-[#ebebeb] overflow-hidden">
 
-        <form onSubmit={handleUpdate} className="space-y-6">
+        {/* HEADER */}
+        <div className="px-8 py-8 border-b border-[#ebebeb]">
 
-          <input
-            className="w-full border p-3 rounded-xl"
-            placeholder="Owner Name"
-            value={ownerName}
-            onChange={(e) => setOwnerName(e.target.value)}
-          />
+          <h1 className="text-3xl font-semibold text-[#222222]">
+            Edit Shop Profile
+          </h1>
 
-          <input
-            className="w-full border p-3 rounded-xl"
-            placeholder="Shop Name"
-            value={shopName}
-            onChange={(e) => setShopName(e.target.value)}
-          />
+          <p className="text-[#717171] mt-2">
+            Manage your shop details and branding
+          </p>
+        </div>
 
-          {/* Location Section */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <p className="text-sm font-medium mb-4">
-              Shop Location
-            </p>
+        {/* FORM */}
+        <form
+          onSubmit={
+            handleUpdate
+          }
+          className="p-8 space-y-8"
+        >
 
-            <select
-              className="w-full mb-4 p-3 rounded-xl border"
-              value={city}
-              onChange={(e) =>
-                handleCityChange(e.target.value)
+          {/* OWNER + SHOP */}
+          <div className="grid md:grid-cols-2 gap-6">
+
+            <input
+              type="text"
+              placeholder="Owner Name"
+              value={
+                ownerName
               }
-            >
-              <option value="">Select State</option>
-              {Object.keys(locations).map((state) => (
-                <option key={state} value={state}>
-                  {state}
-                </option>
-              ))}
-            </select>
-
-            <select
-              className="w-full p-3 rounded-xl border"
-              value={district}
               onChange={(e) =>
-                setDistrict(e.target.value)
+                setOwnerName(
+                  e.target
+                    .value
+                )
               }
-              disabled={!city}
-            >
-              <option value="">Select District</option>
-              {city &&
-                locations[city]?.map((dist) => (
-                  <option key={dist} value={dist}>
-                    {dist}
-                  </option>
-                ))}
-            </select>
+              className="w-full border border-[#dddddd] rounded-2xl px-4 py-4"
+            />
+
+            <input
+              type="text"
+              placeholder="Shop Name"
+              value={
+                shopName
+              }
+              onChange={(e) =>
+                setShopName(
+                  e.target
+                    .value
+                )
+              }
+              className="w-full border border-[#dddddd] rounded-2xl px-4 py-4"
+            />
           </div>
 
-          <input
-            className="w-full border p-3 rounded-xl"
-            placeholder="Area / Locality"
-            value={area}
-            onChange={(e) => setArea(e.target.value)}
-          />
+          {/* LOCATION */}
+          <div className="space-y-6">
 
-          <textarea
-            className="w-full border p-3 rounded-xl"
-            placeholder="Full Address"
-            rows={3}
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-          />
-          <input
-            className="w-full border p-3 rounded-xl"
-            placeholder="Latitude (e.g. 30.7333)"
-            value={lat ?? ""}
-            onChange={(e) => setLat(Number(e.target.value))}
-          />
+            <h2 className="text-xl font-semibold">
+              Location
+            </h2>
 
-          <input
-            className="w-full border p-3 rounded-xl"
-            placeholder="Longitude (e.g. 76.7794)"
-            value={lng ?? ""}
-            onChange={(e) => setLng(Number(e.target.value))}
-          />
+            <div className="grid md:grid-cols-2 gap-6">
 
+              {/* STATE */}
+              <select
+                value={city}
+                onChange={(e) =>
+                  handleCityChange(
+                    e.target
+                      .value
+                  )
+                }
+                className="w-full border border-[#dddddd] rounded-2xl px-4 py-4 bg-white"
+              >
+                <option value="">
+                  Select State
+                </option>
+
+                {Object.keys(
+                  locations
+                ).map(
+                  (
+                    state
+                  ) => (
+                    <option
+                      key={
+                        state
+                      }
+                      value={
+                        state
+                      }
+                    >
+                      {
+                        state
+                      }
+                    </option>
+                  )
+                )}
+              </select>
+
+              {/* DISTRICT */}
+              <select
+                value={
+                  district
+                }
+                onChange={(e) =>
+                  setDistrict(
+                    e.target
+                      .value
+                  )
+                }
+                disabled={!city}
+                className="w-full border border-[#dddddd] rounded-2xl px-4 py-4 bg-white"
+              >
+                <option value="">
+                  Select District
+                </option>
+
+                {city &&
+                  locations[
+                    city
+                  ]?.map(
+                    (
+                      dist
+                    ) => (
+                      <option
+                        key={
+                          dist
+                        }
+                        value={
+                          dist
+                        }
+                      >
+                        {
+                          dist
+                        }
+                      </option>
+                    )
+                  )}
+              </select>
+            </div>
+
+            <input
+              type="text"
+              placeholder="Area / Locality"
+              value={area}
+              onChange={(e) =>
+                setArea(
+                  e.target
+                    .value
+                )
+              }
+              className="w-full border border-[#dddddd] rounded-2xl px-4 py-4"
+            />
+
+            <textarea
+              rows={4}
+              placeholder="Full Address"
+              value={address}
+              onChange={(e) =>
+                setAddress(
+                  e.target
+                    .value
+                )
+              }
+              className="w-full border border-[#dddddd] rounded-2xl px-4 py-4 resize-none"
+            />
+          </div>
+
+          {/* COORDINATES */}
+          <div className="grid md:grid-cols-2 gap-6">
+
+            <input
+              type="number"
+              placeholder="Latitude"
+              value={
+                lat ?? ""
+              }
+              onChange={(e) =>
+                setLat(
+                  Number(
+                    e.target
+                      .value
+                  )
+                )
+              }
+              className="w-full border border-[#dddddd] rounded-2xl px-4 py-4"
+            />
+
+            <input
+              type="number"
+              placeholder="Longitude"
+              value={
+                lng ?? ""
+              }
+              onChange={(e) =>
+                setLng(
+                  Number(
+                    e.target
+                      .value
+                  )
+                )
+              }
+              className="w-full border border-[#dddddd] rounded-2xl px-4 py-4"
+            />
+          </div>
 
           <button
             type="button"
-            onClick={handleGetLocation}
-            className="w-full bg-slate-100 hover:bg-slate-200 py-3 rounded-xl font-medium"
+            onClick={
+              handleGetLocation
+            }
+            className="w-full border border-[#dddddd] py-4 rounded-2xl font-medium hover:border-black transition"
           >
-            📍 Update Shop Location
+            📍 Use Current Location
           </button>
 
-          {/* Optional Branding Fields */}
-          <input
-            className="w-full border p-3 rounded-xl"
-            placeholder="Phone Number (Optional)"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
+          {/* BRANDING */}
+          <div className="space-y-6">
 
-          <input
-            className="w-full border p-3 rounded-xl"
-            placeholder="Banner Image URL (Optional)"
-            value={bannerImage}
-            onChange={(e) =>
-              setBannerImage(e.target.value)
-            }
-          />
+            <input
+              type="text"
+              placeholder="Phone Number"
+              value={phone}
+              onChange={(e) =>
+                setPhone(
+                  e.target
+                    .value
+                )
+              }
+              className="w-full border border-[#dddddd] rounded-2xl px-4 py-4"
+            />
 
-          <input
-            className="w-full border p-3 rounded-xl"
-            placeholder="Logo Image URL (Optional)"
-            value={logoImage}
-            onChange={(e) =>
-              setLogoImage(e.target.value)
-            }
-          />
+            <input
+              type="text"
+              placeholder="Banner Image URL"
+              value={
+                bannerImage
+              }
+              onChange={(e) =>
+                setBannerImage(
+                  e.target
+                    .value
+                )
+              }
+              className="w-full border border-[#dddddd] rounded-2xl px-4 py-4"
+            />
 
+            <input
+              type="text"
+              placeholder="Logo Image URL"
+              value={
+                logoImage
+              }
+              onChange={(e) =>
+                setLogoImage(
+                  e.target
+                    .value
+                )
+              }
+              className="w-full border border-[#dddddd] rounded-2xl px-4 py-4"
+            />
+          </div>
+
+          {/* BUTTON */}
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold transition"
+            disabled={
+              loading
+            }
+            className="w-full bg-[#FF385C] hover:bg-[#e11d48] text-white py-4 rounded-2xl font-semibold text-lg transition"
           >
-            {loading ? "Updating..." : "Save Changes"}
+            {loading
+              ? "Updating..."
+              : "Save Changes"}
           </button>
         </form>
       </div>

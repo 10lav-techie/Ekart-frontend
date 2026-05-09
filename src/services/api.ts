@@ -1,19 +1,27 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://ekart-lqt2.onrender.com/api",
+  baseURL:
+    "http://localhost:5000/api",
 });
 
-// Attach token automatically
-API.interceptors.request.use((req) => {
-  const seller = localStorage.getItem("seller");
+// =====================================================
+// ATTACH TOKEN
+// =====================================================
+API.interceptors.request.use(
+  (req) => {
+    const token =
+      localStorage.getItem(
+        "token"
+      );
 
-  if (seller) {
-    const parsed = JSON.parse(seller);
-    req.headers.Authorization = `Bearer ${parsed.token}`;
+    if (token) {
+      req.headers.Authorization =
+        `Bearer ${token}`;
+    }
+
+    return req;
   }
-
-  return req;
-});
+);
 
 export default API;

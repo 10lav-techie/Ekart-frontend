@@ -1,36 +1,145 @@
-import type { ReactNode } from "react";
+import type {
+  ReactNode,
+} from "react";
 
-import { createContext, useState, useEffect } from "react";
+import {
+  createContext,
+  useEffect,
+  useState,
+} from "react";
 
+// =====================================================
+// USER TYPE
+// =====================================================
+interface UserType {
+  _id: string;
+
+  name?: string;
+
+  email: string;
+
+  role:
+    | "buyer"
+    | "seller";
+
+  token: string;
+
+  seller?: {
+    shopName?: string;
+  };
+}
+
+// =====================================================
+// CONTEXT TYPE
+// =====================================================
 interface AuthContextType {
-  seller: any;
-  setSeller: (seller: any) => void;
+  user: UserType | null;
+
+  setUser: (
+    user: UserType | null
+  ) => void;
+
   logout: () => void;
 }
 
-export const AuthContext = createContext<AuthContextType>({
-  seller: null,
-  setSeller: () => {},
-  logout: () => {},
-});
+// =====================================================
+// CONTEXT
+// =====================================================
+export const AuthContext =
+  createContext<AuthContextType>(
+    {
+      user: null,
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [seller, setSeller] = useState<any>(null);
+      setUser: () => {},
 
+      logout: () => {},
+    }
+  );
+
+// =====================================================
+// PROVIDER
+// =====================================================
+export const AuthProvider = ({
+  children,
+}: {
+  children: ReactNode;
+}) => {
+  const [user, setUser] =
+    useState<UserType | null>(
+      null
+    );
+
+  // =====================================================
+  // LOAD USER
+  // =====================================================
   useEffect(() => {
-    const storedSeller = localStorage.getItem("seller");
-    if (storedSeller) {
-      setSeller(JSON.parse(storedSeller));
+    try {
+      const storedUser =
+        localStorage.getItem(
+          "user"
+        );
+
+      if (storedUser) {
+        const parsedUser =
+          JSON.parse(
+            storedUser
+          );
+
+        if (
+          parsedUser?.role ===
+            "buyer" ||
+          parsedUser?.role ===
+            "seller"
+        ) {
+          setUser(
+            parsedUser
+          );
+        } else {
+          localStorage.removeItem(
+            "user"
+          );
+
+          localStorage.removeItem(
+            "token"
+          );
+        }
+      }
+    } catch (error) {
+      localStorage.removeItem(
+        "user"
+      );
+
+      localStorage.removeItem(
+        "token"
+      );
     }
   }, []);
 
+  // =====================================================
+  // LOGOUT
+  // =====================================================
   const logout = () => {
-    localStorage.removeItem("seller");
-    setSeller(null);
+    localStorage.removeItem(
+      "user"
+    );
+
+    localStorage.removeItem(
+      "token"
+    );
+
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ seller, setSeller, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+
+        setUser,
+
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
